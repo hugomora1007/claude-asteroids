@@ -62,6 +62,20 @@ const RADII  = [0, 16, 30, 50];   // por tamaño 1, 2, 3
 const SPEEDS = [0, 85, 55, 32];   // velocidad base por tamaño
 const POINTS = [0, 100, 50, 20];  // puntos por tamaño
 
+// Forma especial para asteroides grandes, tomada de la imagen de referencia.
+// Vértices en píxeles de la imagen, normalizados para que el más lejano quede en radio 1.
+const FORMA_GRANDE_IMG = [
+  [188, 63], [268, 87], [251, 171], [330, 195], [308, 282],
+  [238, 279], [205, 334], [107, 286], [62, 205], [84, 117],
+];
+const FORMA_GRANDE = (() => {
+  const cx = FORMA_GRANDE_IMG.reduce((s, p) => s + p[0], 0) / FORMA_GRANDE_IMG.length;
+  const cy = FORMA_GRANDE_IMG.reduce((s, p) => s + p[1], 0) / FORMA_GRANDE_IMG.length;
+  const maxR = Math.max(...FORMA_GRANDE_IMG.map(p => Math.hypot(p[0] - cx, p[1] - cy)));
+  return FORMA_GRANDE_IMG.map(([x, y]) => [(x - cx) / maxR, (y - cy) / maxR]);
+})();
+const PROB_FORMA_GRANDE = 0.5;    // probabilidad de que un asteroide grande use la forma especial
+
 class Asteroid {
   constructor(x, y, size = 3) {
     this.x    = x;
@@ -77,13 +91,18 @@ class Asteroid {
     this.rotSpeed = rand(-1.2, 1.2);
     this.rot = rand(0, Math.PI * 2);
 
-    // Polígono irregular
-    const n = randInt(8, 13);
-    this.verts = [];
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2;
-      const r = this.radius * rand(0.6, 1.0);
-      this.verts.push([Math.cos(a) * r, Math.sin(a) * r]);
+    if (size === 3 && Math.random() < PROB_FORMA_GRANDE) {
+      // Forma especial de la imagen de referencia
+      this.verts = FORMA_GRANDE.map(([vx, vy]) => [vx * this.radius, vy * this.radius]);
+    } else {
+      // Polígono irregular
+      const n = randInt(8, 13);
+      this.verts = [];
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        const r = this.radius * rand(0.6, 1.0);
+        this.verts.push([Math.cos(a) * r, Math.sin(a) * r]);
+      }
     }
   }
 
